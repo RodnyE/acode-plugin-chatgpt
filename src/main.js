@@ -206,7 +206,6 @@ class Chatgpt {
         return;
       }
       let token;
-      let baseUrl = ;
       
       const myOpenAiToken = window.localStorage.getItem("chatgpt-api-key");
       if (myOpenAiToken) {
@@ -345,7 +344,7 @@ class Chatgpt {
   
   async updateBaseUrl() {
     /*
-    update chatgpt token
+    update chatgpt base url to request
     */
     window.localStorage.removeItem('chatgpt-base-url');
     let newBaseUrl = await multiPrompt(
@@ -354,11 +353,11 @@ class Chatgpt {
         type: "text",
         id: "url",
         required: true,
-        placeholder: "Default - https://api.openai.com/v1",
+        placeholder: "Default -> " + DEFAULT_BASE_URL,
       }]
     );
-    AI_BASE_URL = newBaseUrl["url"];
-    window.localStorage.setItem("chatgpt-base-url", AI_BASE_URL);
+    
+    window.localStorage.setItem("chatgpt-base-url", newBaseUrl["url"]);
     window.toast("ChatGPT URL updated!", 3000);
   }
   
