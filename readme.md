@@ -134,6 +134,7 @@ Features
 - Syntax highlighting and markdown styling, etc
 - Generate images with your prompts
 - Can answer to doubt related to Acode
+- Support for the use of other APIs besides OpenAI's official one.
 
 ### Important Links
 - [Github Issue Page](https://github.com/bajrangCoder/acode-plugin-chatgpt/issues)

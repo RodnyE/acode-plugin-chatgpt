@@ -15,8 +15,8 @@ const sidebarApps = acode.require('sidebarApps');
 const toInternalUrl = acode.require('toInternalUrl');
 const { editor } = editorManager
 
+const DEFAULT_BASE_URL = "https://api.openai.com/v1";
 const AI_HISTORY_PATH = window.DATA_STORAGE + "chatgpt";
-
 let CURRENT_SESSION_FILEPATH = null;
 
 const SYSTEM_PROMPT = `You are ChatGPT, a large language model trained by OpenAI.
@@ -88,6 +88,12 @@ class Chatgpt {
       name: "chatgpt_update_token",
       description: "Update Chat GPT Token",
       exec: this.updateApiToken.bind(this),
+    });
+    
+    editor.commands.addCommand({
+      name: "chatgpt_update_base_url",
+      description: "Update Chat GPT Base URL",
+      exec: this.updateBaseUrl.bind(this),
     });
     
     $page.id = "acode-plugin-chatgpt";
@@ -200,6 +206,8 @@ class Chatgpt {
         return;
       }
       let token;
+      let baseUrl = ;
+      
       const myOpenAiToken = window.localStorage.getItem("chatgpt-api-key");
       if (myOpenAiToken) {
         token = myOpenAiToken;
@@ -218,7 +226,10 @@ class Chatgpt {
         token = tokenPrompt["token"];
         window.localStorage.setItem("chatgpt-api-key", token);
       }
-      const $openai = new OpenAIApi(new Configuration({ apiKey: token }));
+      const $openai = new OpenAIApi(new Configuration({ 
+          apiKey: token,
+          baseUrl: window.localStorage.getItem("chatgpt-base-url") || DEFAULT_BASE_URL,
+      }));
       loader.create("Wait", "Generating image....");
       const response = await $openai.createImage({
         prompt: this.$promtArea.value,
@@ -280,7 +291,13 @@ class Chatgpt {
         window.localStorage.setItem("chatgpt-api-key", token);
       }
       
-      this.$openai = new OpenAIApi(new Configuration({ apiKey: token }));
+      // These lines of code have been removed because in the getChatgptResponse method, 
+      // it is re-instantiated with each call.
+      //
+      //this.$openai = new OpenAIApi(new Configuration({ 
+      //    apiKey: token,
+      //}));
+      
       this.$mdIt = window.markdownit({
         html: false,
         xhtmlOut: false,
@@ -324,6 +341,25 @@ class Chatgpt {
     );
     window.localStorage.setItem("chatgpt-api-key", newApiToken["token"]);
     window.toast("Api key updated!", 3000);
+  }
+  
+  async updateBaseUrl() {
+    /*
+    update chatgpt token
+    */
+    window.localStorage.removeItem('chatgpt-base-url');
+    let newBaseUrl = await multiPrompt(
+      "Enter the base URL to ChatGPT request",
+      [{
+        type: "text",
+        id: "url",
+        required: true,
+        placeholder: "Default - https://api.openai.com/v1",
+      }]
+    );
+    AI_BASE_URL = newBaseUrl["url"];
+    window.localStorage.setItem("chatgpt-base-url", AI_BASE_URL);
+    window.toast("ChatGPT URL updated!", 3000);
   }
   
   _sanitizeFileName(fileName) {
@@ -592,7 +628,13 @@ class Chatgpt {
         ]),
         { role: "user", content: question}
       ];
-      const res = await this.$openai.createChatCompletion({
+      
+      const $openai = new OpenAIApi(new Configuration({ 
+          apiKey: token,
+          baseUrl: window.localStorage.getItem("chatgpt-base-url") || DEFAULT_BASE_URL,
+      }));
+      
+      const res = await $openai.createChatCompletion({
         model: "gpt-3.5-turbo",
         messages: arrMessage,
         temperature: 0,
@@ -675,6 +717,7 @@ class Chatgpt {
     sidebarApps.remove("dall-e-ai");
     editorManager.editor.commands.removeCommand("chatgpt");
     editorManager.editor.commands.removeCommand("chatgpt_update_token");
+    editorManager.editor.commands.removeCommand("chatgpt_update_base_url");
     window.localStorage.removeItem('chatgpt-api-key');
     this.$githubDarkFile.remove();
     this.$higlightJsFile.remove();
